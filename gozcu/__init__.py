@@ -1,13 +1,7 @@
-import sys, os
-
-
 def ana_fonksyon():
-    sys.stdout.write("Bir veri giriniz: ")
-    sys.stdout.flush()
-    veri = sys.stdin.readline()[:-len(os.linesep)]
-    sys.stdout.write("Girdiğiniz veri: {}\n".format(veri))
-    sys.stdout.write("Girdiğiniz verinin uzunluğu: {}\n".format(len(veri)))
-    sys.stdout.flush()
+    veri = input("Bir veri giriniz: ")
+    print("Girdiğiniz veri: {}".format(veri))
+    print("Girdiğiniz verinin uzunluğu: {}".format(len(veri)))
     # temel_turleri_goster()
 
 
