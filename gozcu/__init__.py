@@ -1,3 +1,6 @@
+import sys
+
+
 def typed_input(typ, prompt=None, extra_tries=3):
     for i in range(extra_tries + 1):
         veri = input(prompt)
@@ -12,11 +15,9 @@ def typed_input(typ, prompt=None, extra_tries=3):
 
 
 def ana_fonksyon():
-    veri = typed_input(int, "Bir sayı giriniz: ")
-    print("Girdiğiniz veri: {}".format(veri))
-    print("Girdiğiniz verinin türü: {}".format(int.__name__))
-
-    # temel_turleri_goster()
+    print("Bir karakter okuyacağız, bitince Ctrl-D kombinasyonu ya da enter tuşu ile stdin'i flushlayın.")
+    veri = sys.stdin.read(1)
+    print("İşte o karakter: {}".format(veri))
 
 
 def temel_turleri_goster():
