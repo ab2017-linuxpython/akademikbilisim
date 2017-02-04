@@ -1,17 +1,20 @@
-def ana_fonksyon():
-    veri = input("Bir veri giriniz: ")
-    print("Girdiğiniz veri: {}".format(veri))
-    print("Girdiğiniz verinin uzunluğu: {}".format(len(veri)))
-    ty = str  # default olarak herşey string
-    for possible_ty in (int, float):
+def typed_input(typ, prompt=None, extra_tries=3):
+    for i in range(extra_tries + 1):
+        veri = input(prompt)
         try:
-            possible_ty(veri)
+            veri = typ(veri)
         except ValueError:
-            continue
+            print("Hatalı giriş")
         else:
-            ty = possible_ty
-            break
-    print("Girdiğiniz verinin tahmini türü: {}".format(ty.__name__))
+            return veri
+    else:
+        raise TypeError("Girdi türü desteklenmiyor")
+
+
+def ana_fonksyon():
+    veri = typed_input(int, "Bir sayı giriniz: ")
+    print("Girdiğiniz veri: {}".format(veri))
+    print("Girdiğiniz verinin türü: {}".format(int.__name__))
 
     # temel_turleri_goster()
 
