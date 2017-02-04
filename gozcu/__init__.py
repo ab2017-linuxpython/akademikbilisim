@@ -2,6 +2,17 @@ def ana_fonksyon():
     veri = input("Bir veri giriniz: ")
     print("Girdiğiniz veri: {}".format(veri))
     print("Girdiğiniz verinin uzunluğu: {}".format(len(veri)))
+    ty = str  # default olarak herşey string
+    for possible_ty in (int, float):
+        try:
+            possible_ty(veri)
+        except ValueError:
+            continue
+        else:
+            ty = possible_ty
+            break
+    print("Girdiğiniz verinin tahmini türü: {}".format(ty.__name__))
+
     # temel_turleri_goster()
 
 
