@@ -5,13 +5,12 @@ import time
 
 import psutil
 
-
-def safe_input(prompt=None):
-    try:
-        return input(prompt)
-    except KeyboardInterrupt:
-        print()
-        exit(0)
+# def safe_input(prompt=None):
+#     try:
+#         return input(prompt)
+#     except KeyboardInterrupt:
+#         print()
+#         exit(0)
 
 
 if "--help" in sys.argv:
@@ -29,34 +28,30 @@ if "--help" in sys.argv:
     exit(0)
 
 
-def getarg(name):
+def getarg(name, default=""):
     for arg in sys.argv:
         if arg.startswith(name) and "=" in arg:
             return arg.split("=")[1]
     else:
-        return ""
+        return default
 
 
-mode = getarg("--mode").lower()
+mode = getarg("--mode", default="a").lower()
 # mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
 if mode not in "car":
     print("Unknown Mode {}".format(mode), file=sys.stderr)
     exit(1)
-elif not mode:
-    mode = "a"
 
 if mode in "ca":
-    cpu_warn = getarg("--cpu_warn")
+    cpu_warn = getarg("--cpu_warn", default=None)
     # cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
     if cpu_warn and not cpu_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif cpu_warn:
         cpu_warn = int(cpu_warn)
-    else:
-        cpu_warn = None
 
-    cpu_crit = getarg("--cpu_crit")
+    cpu_crit = getarg("--cpu_crit", default="80")
     # cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
     if cpu_crit and not cpu_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
@@ -67,27 +62,23 @@ if mode in "ca":
         cpu_crit = 80
 
 if mode in "ra":
-    ram_warn = getarg("--ram_warn")
+    ram_warn = getarg("--ram_warn", default=None)
     # ram_warn = safe_input("Warning level for RAM (defaut: None): ")
     if ram_warn and not ram_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif ram_warn:
         ram_warn = int(ram_warn)
-    else:
-        ram_warn = None
 
-    ram_crit = getarg("--ram_crit")
+    ram_crit = getarg("--ram_crit", default="60")
     # ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
     if ram_crit and not ram_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif ram_crit:
         ram_crit = int(ram_crit)
-    else:
-        ram_crit = 60
 
-warn_out = getarg("--warn_out")
+warn_out = getarg("--warn_out", default=os.devnull)
 # warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
 if os.path.exists(warn_out) and os.path.isfile(warn_out):
     try:
@@ -99,10 +90,8 @@ elif warn_out == "stdout":
     warn_out = sys.stdout
 elif warn_out == "stderr":
     warn_out = sys.stderr
-else:
-    warn_out = open(os.devnull, "w")
 
-crit_out = getarg("--crit_out")
+crit_out = getarg("--crit_out", "stdout")
 # crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
 if os.path.exists(crit_out) and os.path.isfile(crit_out):
     try:
@@ -114,10 +103,8 @@ elif crit_out == "stdout":
     crit_out = sys.stdout
 elif crit_out == "stderr":
     crit_out = sys.stderr
-else:
-    crit_out = sys.stdout
 
-resolution = getarg("--resolution")
+resolution = getarg("--resolution", default=0.5)
 # resolution = safe_input("Reading resolution (default:0.5): ")
 if resolution:
     try:
@@ -125,16 +112,17 @@ if resolution:
     except ValueError:
         print("Invalid resolution {}".format(resolution))
         exit(4)
-else:
-    resolution = 0.5
 
 wait = False
 
 
 def handle_sigint(sig, stack):
     global wait
+    if wait:
+        print()
+        exit(20)
     wait = True
-    choice = safe_input("\rAre you sure you want to exit? (y/N)").lower()
+    choice = input("\rAre you sure you want to exit? (y/N)").lower()
     if choice == "y":
         exit(0)
     else:
