@@ -1,3 +1,4 @@
+import getopt
 import os
 import signal
 import sys
@@ -13,37 +14,41 @@ import psutil
 #         exit(0)
 
 
-if "--help" in sys.argv:
+try:
+    opts, _ = getopt.getopt(sys.argv[1:], 'hq:w:e:r:t:y:u:o',
+                            ["help", "mode=", "cpu_warn=", "cpu_crit=", "ram_warn=",
+                             "ram_crit=", "warn_out=", "crit_out=", "resolution="])
+except getopt.GetoptError as e:
+    print(e, file=sys.stderr, flush=True)
+    exit(1)
+
+opts = dict(opts)
+
+if "--help" in opts or "-h" in opts:
     print("2. gün Etüt kullanım talimatları\n"
-          "  --help Shows this help\n"
-          "  --mode=       Warn for [C]pu, [R]am, [A]ll (default: A)\n"
-          "  --cpu_warn=   Warning level for CPU (defaut: None)\n"
-          "  --cpu_crit=   Warning level for CPU (defaut: 80)\n"
-          "  --ram_warn=   Warning level for RAM (defaut: None)\n"
-          "  --ram_crit=   Warning level for RAM (defaut: 60)\n"
-          "  --warn_out=   Warning output [file path, stdout, stderr] (default:'/dev/null')\n"
-          "  --crit_out=   Critical output [file path, stdout, stderr] (default:stdout)\n"
-          "  --resolution= Reading resolution (default:0.5)\n"
+          "  --help -h        Shows this help\n"
+          "  --mode= -q       Warn for [C]pu, [R]am, [A]ll (default: A)\n"
+          "  --cpu_warn= -w   Warning level for CPU (defaut: None)\n"
+          "  --cpu_crit= -e   Warning level for CPU (defaut: 80)\n"
+          "  --ram_warn= -r   Warning level for RAM (defaut: None)\n"
+          "  --ram_crit= -t   Warning level for RAM (defaut: 60)\n"
+          "  --warn_out= -y   Warning output [file path, stdout, stderr] (default:'/dev/null')\n"
+          "  --crit_out= -u   Critical output [file path, stdout, stderr] (default:stdout)\n"
+          "  --resolution= -o Reading resolution (default:0.5)\n"
+          "Örnek kullanımlar:\n"
+          "  python3 odev.py --mode=c -e 90 --resolution=0.1\n"
+          "  python3 odev.py -q r -t 80 --resolution=1.5\n"
           )
     exit(0)
 
-
-def getarg(name, default=""):
-    for arg in sys.argv:
-        if arg.startswith(name) and "=" in arg:
-            return arg.split("=")[1]
-    else:
-        return default
-
-
-mode = getarg("--mode", default="a").lower()
+mode = opts.get("--mode", opts.get("-q", "a")).lower()
 # mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
 if mode not in "car":
     print("Unknown Mode {}".format(mode), file=sys.stderr)
     exit(1)
 
 if mode in "ca":
-    cpu_warn = getarg("--cpu_warn", default=None)
+    cpu_warn = opts.get("--cpu_warn", opts.get("w", None))
     # cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
     if cpu_warn and not cpu_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
@@ -51,7 +56,7 @@ if mode in "ca":
     elif cpu_warn:
         cpu_warn = int(cpu_warn)
 
-    cpu_crit = getarg("--cpu_crit", default="80")
+    cpu_crit = opts.get("--cpu_crit", opts.get("e", "80"))
     # cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
     if cpu_crit and not cpu_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
@@ -62,7 +67,7 @@ if mode in "ca":
         cpu_crit = 80
 
 if mode in "ra":
-    ram_warn = getarg("--ram_warn", default=None)
+    ram_warn = opts.get("--ram_warn", opts.get("r", None))
     # ram_warn = safe_input("Warning level for RAM (defaut: None): ")
     if ram_warn and not ram_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
@@ -70,7 +75,7 @@ if mode in "ra":
     elif ram_warn:
         ram_warn = int(ram_warn)
 
-    ram_crit = getarg("--ram_crit", default="60")
+    ram_crit = opts.get("--ram_crit", opts.get("t", "60"))
     # ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
     if ram_crit and not ram_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
@@ -78,7 +83,7 @@ if mode in "ra":
     elif ram_crit:
         ram_crit = int(ram_crit)
 
-warn_out = getarg("--warn_out", default=os.devnull)
+warn_out = opts.get("--warn_out", opts.get("y", os.devnull))
 # warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
 if os.path.exists(warn_out) and os.path.isfile(warn_out):
     try:
@@ -91,7 +96,7 @@ elif warn_out == "stdout":
 elif warn_out == "stderr":
     warn_out = sys.stderr
 
-crit_out = getarg("--crit_out", "stdout")
+crit_out = opts.get("--crit_out", opts.get("u", "stdout"))
 # crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
 if os.path.exists(crit_out) and os.path.isfile(crit_out):
     try:
@@ -104,7 +109,7 @@ elif crit_out == "stdout":
 elif crit_out == "stderr":
     crit_out = sys.stderr
 
-resolution = getarg("--resolution", default=0.5)
+resolution = opts.get("--resolution", opts.get("o", 0.5))
 # resolution = safe_input("Reading resolution (default:0.5): ")
 if resolution:
     try:
