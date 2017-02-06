@@ -15,7 +15,7 @@ elif not mode:
 
 if mode in "ca":
     cpu_warn = input("Warning level for CPU (defaut: None): ")
-    if cpu_warn and not cpu_warn.digit():
+    if cpu_warn and not cpu_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif cpu_warn:
@@ -24,17 +24,17 @@ if mode in "ca":
         cpu_warn = None
 
     cpu_crit = input("Warning level for CPU (defaut: 80): ")
-    if cpu_crit and not cpu_crit.digit():
+    if cpu_crit and not cpu_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif cpu_crit:
         cpu_crit = int(cpu_crit)
     else:
-        cpu_crit = 50
+        cpu_crit = 80
 
 if mode in "ra":
     ram_warn = input("Warning level for RAM (defaut: None): ")
-    if ram_warn and not ram_warn.digit():
+    if ram_warn and not ram_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif ram_warn:
@@ -43,13 +43,13 @@ if mode in "ra":
         ram_warn = None
 
     ram_crit = input("Warning level for RAM (defaut: 60): ")
-    if ram_crit and not ram_crit.digit():
+    if ram_crit and not ram_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
     elif ram_crit:
         ram_crit = int(ram_crit)
     else:
-        ram_crit = 50
+        ram_crit = 60
 
 warn_out = input("Warning output [file path, stdout, stderr] (default:None): ").lower()
 if os.path.exists(warn_out) and os.path.isfile(warn_out):
@@ -89,7 +89,6 @@ if resolution:
 else:
     resolution = 0.5
 
-flag = True
 wait = False
 
 
@@ -105,11 +104,12 @@ def handle_sigint(sig, stack):
 
 signal.signal(signal.SIGINT, handle_sigint)
 
-while flag:
+while True:
     if wait:
         time.sleep(0.1)
+        continue
     if mode in "ca":
-        cpu_reading = max(psutil.cpu_percent(percpu=True))
+        cpu_reading = max(psutil.cpu_percent(resolution, percpu=True))
         if cpu_reading > cpu_crit:
             print("CPU kullanımı kritik", file=crit_out)
         elif cpu_warn is not None and cpu_reading > cpu_warn:
