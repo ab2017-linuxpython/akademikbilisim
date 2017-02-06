@@ -1,155 +1,90 @@
-import getopt
 import os
 import signal
 import sys
 import time
+import argparse
 
 import psutil
 
-# def safe_input(prompt=None):
-#     try:
-#         return input(prompt)
-#     except KeyboardInterrupt:
-#         print()
-#         exit(0)
+
+def file_or_stdio(arg):
+    """This is a validator to open files for writing or opening stdio"""
+    if os.path.exists(arg) and os.path.isfile(arg):
+        try:
+            arg = open(arg, "w")
+        except:
+            argparse.ArgumentTypeError("Unable to open file {}".format(arg))
+    elif arg.lower() == "stdout":
+        arg = sys.stdout
+    elif arg.lower() == "stderr":
+        arg = sys.stderr
+    return arg
 
 
-try:
-    opts, _ = getopt.getopt(sys.argv[1:], 'hq:w:e:r:t:y:u:o',
-                            ["help", "mode=", "cpu_warn=", "cpu_crit=", "ram_warn=",
-                             "ram_crit=", "warn_out=", "crit_out=", "resolution="])
-except getopt.GetoptError as e:
-    print(e, file=sys.stderr, flush=True)
-    exit(1)
+parser = argparse.ArgumentParser(description="Warns user about CPU and RAM usages")
 
-opts = dict(opts)
+parser.add_argument("-q", "--mode",
+                    help="Warn for given type, [C]pu, [R]am, [A]ll",
+                    default="A", type=str, choices="CAR")
 
-if "--help" in opts or "-h" in opts:
-    print("2. gün Etüt kullanım talimatları\n"
-          "  --help -h        Shows this help\n"
-          "  --mode= -q       Warn for [C]pu, [R]am, [A]ll (default: A)\n"
-          "  --cpu_warn= -w   Warning level for CPU (defaut: None)\n"
-          "  --cpu_crit= -e   Warning level for CPU (defaut: 80)\n"
-          "  --ram_warn= -r   Warning level for RAM (defaut: None)\n"
-          "  --ram_crit= -t   Warning level for RAM (defaut: 60)\n"
-          "  --warn_out= -y   Warning output [file path, stdout, stderr] (default:'/dev/null')\n"
-          "  --crit_out= -u   Critical output [file path, stdout, stderr] (default:stdout)\n"
-          "  --resolution= -o Reading resolution (default:0.5)\n"
-          "Örnek kullanımlar:\n"
-          "  python3 odev.py --mode=c -e 90 --resolution=0.1\n"
-          "  python3 odev.py -q r -t 80 --resolution=1.5\n"
-          )
-    exit(0)
+parser.add_argument("-w", "--cpu_warn",
+                    help="Warning level for CPU",
+                    default=None, type=int)
 
-mode = opts.get("--mode", opts.get("-q", "a")).lower()
-# mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
-if mode not in "car":
-    print("Unknown Mode {}".format(mode), file=sys.stderr)
-    exit(1)
+parser.add_argument("-e", "--cpu_crit",
+                    help="Warning level for CPU",
+                    default=80, type=int)
 
-if mode in "ca":
-    cpu_warn = opts.get("--cpu_warn", opts.get("w", None))
-    # cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
-    if cpu_warn and not cpu_warn.isdigit():
-        print("Unknown Level", file=sys.stderr)
-        exit(2)
-    elif cpu_warn:
-        cpu_warn = int(cpu_warn)
+parser.add_argument("-r", "--ram_warn",
+                    help="Warning level for RAM",
+                    default=None, type=int)
 
-    cpu_crit = opts.get("--cpu_crit", opts.get("e", "80"))
-    # cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
-    if cpu_crit and not cpu_crit.isdigit():
-        print("Unknown Level", file=sys.stderr)
-        exit(2)
-    elif cpu_crit:
-        cpu_crit = int(cpu_crit)
-    else:
-        cpu_crit = 80
+parser.add_argument("-t", "--ram_crit",
+                    help="Warning level for RAM",
+                    default=60, type=int)
 
-if mode in "ra":
-    ram_warn = opts.get("--ram_warn", opts.get("r", None))
-    # ram_warn = safe_input("Warning level for RAM (defaut: None): ")
-    if ram_warn and not ram_warn.isdigit():
-        print("Unknown Level", file=sys.stderr)
-        exit(2)
-    elif ram_warn:
-        ram_warn = int(ram_warn)
+parser.add_argument("-y", "--warn_out",
+                    help="Warning output (file path, stdout, stderr)",
+                    default="/dev/null", type=file_or_stdio)
 
-    ram_crit = opts.get("--ram_crit", opts.get("t", "60"))
-    # ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
-    if ram_crit and not ram_crit.isdigit():
-        print("Unknown Level", file=sys.stderr)
-        exit(2)
-    elif ram_crit:
-        ram_crit = int(ram_crit)
+parser.add_argument("-u", "--crit_out",
+                    help="Critical output (file path, stdout, stderr)",
+                    default="stdout", type=file_or_stdio)
 
-warn_out = opts.get("--warn_out", opts.get("y", os.devnull))
-# warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
-if os.path.exists(warn_out) and os.path.isfile(warn_out):
-    try:
-        warn_out = open(warn_out, "w")
-    except:
-        print("Unable to open file {}".format(warn_out), file=sys.stderr)
-        exit(3)
-elif warn_out == "stdout":
-    warn_out = sys.stdout
-elif warn_out == "stderr":
-    warn_out = sys.stderr
+parser.add_argument("-o", "--resolution",
+                    help="Warning level for CPU",
+                    default=0.5, type=float)
 
-crit_out = opts.get("--crit_out", opts.get("u", "stdout"))
-# crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
-if os.path.exists(crit_out) and os.path.isfile(crit_out):
-    try:
-        crit_out = open(crit_out, "w")
-    except:
-        print("Unable to open file {}".format(crit_out), file=sys.stderr)
-        exit(3)
-elif crit_out == "stdout":
-    crit_out = sys.stdout
-elif crit_out == "stderr":
-    crit_out = sys.stderr
-
-resolution = opts.get("--resolution", opts.get("o", 0.5))
-# resolution = safe_input("Reading resolution (default:0.5): ")
-if resolution:
-    try:
-        resolution = float(resolution)
-    except ValueError:
-        print("Invalid resolution {}".format(resolution))
-        exit(4)
-
-wait = False
+arglar = parser.parse_args(sys.argv[1:])
 
 
 def handle_sigint(sig, stack):
-    global wait
-    if wait:
+    """When user sends SIGINT (via Ctrl-C) we ask if it's sure or not"""
+    global _wait  # If we're already interrupted, just exit and keep it in the global variables
+    if _wait:
         print()
         exit(20)
-    wait = True
+    _wait = True
     choice = input("\rAre you sure you want to exit? (y/N)").lower()
     if choice == "y":
         exit(0)
-    else:
-        wait = False
 
 
 signal.signal(signal.SIGINT, handle_sigint)
 
 while True:
-    if wait:
-        time.sleep(0.1)
-        continue
-    if mode in "ca":
-        cpu_reading = max(psutil.cpu_percent(resolution, percpu=True))
-        if cpu_reading > cpu_crit:
-            print("CPU kullanımı kritik", file=crit_out)
-        elif cpu_warn is not None and cpu_reading > cpu_warn:
-            print("CPU kullanımı yüksek", file=warn_out)
-    if mode in "ra":
+    if arglar.mode in "ca":
+        cpu_reading = max(psutil.cpu_percent(arglar.resolution, percpu=True))
+        if cpu_reading > arglar.cpu_crit:
+            print("CPU usage is high", file=arglar.crit_out)
+        elif arglar.cpu_warn is not None and cpu_reading > arglar.cpu_warn:
+            print("CPU usage is critical", file=arglar.warn_out)
+
+    if arglar.mode in "ra":
         ram_reading = psutil.virtual_memory().percent
-        if ram_reading > ram_crit:
-            print("RAM kullanımı kritik", file=crit_out)
-        elif ram_warn is not None and ram_reading > ram_warn:
-            print("RAM kullanımı yüksek", file=warn_out)
-    time.sleep(resolution)
+        if ram_reading > arglar.ram_crit:
+            print("RAM usage is high", file=arglar.crit_out)
+        elif arglar.ram_warn is not None and ram_reading > arglar.ram_warn:
+            print("RAM usage is critical", file=arglar.warn_out)
+
+    time.sleep(arglar.resolution)
