@@ -13,15 +13,41 @@ def safe_input(prompt=None):
         print()
         exit(0)
 
-mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
+
+if "--help" in sys.argv:
+    print("2. gün Etüt kullanım talimatları\n"
+          "  --help Shows this help\n"
+          "  --mode=       Warn for [C]pu, [R]am, [A]ll (default: A)\n"
+          "  --cpu_warn=   Warning level for CPU (defaut: None)\n"
+          "  --cpu_crit=   Warning level for CPU (defaut: 80)\n"
+          "  --ram_warn=   Warning level for RAM (defaut: None)\n"
+          "  --ram_crit=   Warning level for RAM (defaut: 60)\n"
+          "  --warn_out=   Warning output [file path, stdout, stderr] (default:'/dev/null')\n"
+          "  --crit_out=   Critical output [file path, stdout, stderr] (default:stdout)\n"
+          "  --resolution= Reading resolution (default:0.5)\n"
+          )
+    exit(0)
+
+
+def getarg(name):
+    for arg in sys.argv:
+        if arg.startswith(name) and "=" in arg:
+            return arg.split("=")[1]
+    else:
+        return ""
+
+
+mode = getarg("--mode").lower()
+# mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
 if mode not in "car":
-    print("Unknown Mode", file=sys.stderr)
+    print("Unknown Mode {}".format(mode), file=sys.stderr)
     exit(1)
 elif not mode:
     mode = "a"
 
 if mode in "ca":
-    cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
+    cpu_warn = getarg("--cpu_warn")
+    # cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
     if cpu_warn and not cpu_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -30,7 +56,8 @@ if mode in "ca":
     else:
         cpu_warn = None
 
-    cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
+    cpu_crit = getarg("--cpu_crit")
+    # cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
     if cpu_crit and not cpu_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -40,7 +67,8 @@ if mode in "ca":
         cpu_crit = 80
 
 if mode in "ra":
-    ram_warn = safe_input("Warning level for RAM (defaut: None): ")
+    ram_warn = getarg("--ram_warn")
+    # ram_warn = safe_input("Warning level for RAM (defaut: None): ")
     if ram_warn and not ram_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -49,7 +77,8 @@ if mode in "ra":
     else:
         ram_warn = None
 
-    ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
+    ram_crit = getarg("--ram_crit")
+    # ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
     if ram_crit and not ram_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -58,7 +87,8 @@ if mode in "ra":
     else:
         ram_crit = 60
 
-warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
+warn_out = getarg("--warn_out")
+# warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
 if os.path.exists(warn_out) and os.path.isfile(warn_out):
     try:
         warn_out = open(warn_out, "w")
@@ -72,7 +102,8 @@ elif warn_out == "stderr":
 else:
     warn_out = open(os.devnull, "w")
 
-crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
+crit_out = getarg("--crit_out")
+# crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
 if os.path.exists(crit_out) and os.path.isfile(crit_out):
     try:
         crit_out = open(crit_out, "w")
@@ -86,7 +117,8 @@ elif crit_out == "stderr":
 else:
     crit_out = sys.stdout
 
-resolution = safe_input("Reading resolution (default:0.5): ")
+resolution = getarg("--resolution")
+# resolution = safe_input("Reading resolution (default:0.5): ")
 if resolution:
     try:
         resolution = float(resolution)
@@ -128,4 +160,3 @@ while True:
         elif ram_warn is not None and ram_reading > ram_warn:
             print("RAM kullanımı yüksek", file=warn_out)
     time.sleep(resolution)
-
