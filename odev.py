@@ -6,7 +6,14 @@ import time
 import psutil
 
 
-mode = input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
+def safe_input(prompt=None):
+    try:
+        return input(prompt)
+    except KeyboardInterrupt:
+        print()
+        exit(0)
+
+mode = safe_input("Warn for [C]pu, [R]am, [A]ll (default: A): ").lower()
 if mode not in "car":
     print("Unknown Mode", file=sys.stderr)
     exit(1)
@@ -14,7 +21,7 @@ elif not mode:
     mode = "a"
 
 if mode in "ca":
-    cpu_warn = input("Warning level for CPU (defaut: None): ")
+    cpu_warn = safe_input("Warning level for CPU (defaut: None): ")
     if cpu_warn and not cpu_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -23,7 +30,7 @@ if mode in "ca":
     else:
         cpu_warn = None
 
-    cpu_crit = input("Warning level for CPU (defaut: 80): ")
+    cpu_crit = safe_input("Warning level for CPU (defaut: 80): ")
     if cpu_crit and not cpu_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -33,7 +40,7 @@ if mode in "ca":
         cpu_crit = 80
 
 if mode in "ra":
-    ram_warn = input("Warning level for RAM (defaut: None): ")
+    ram_warn = safe_input("Warning level for RAM (defaut: None): ")
     if ram_warn and not ram_warn.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -42,7 +49,7 @@ if mode in "ra":
     else:
         ram_warn = None
 
-    ram_crit = input("Warning level for RAM (defaut: 60): ")
+    ram_crit = safe_input("Warning level for RAM (defaut: 60): ")
     if ram_crit and not ram_crit.isdigit():
         print("Unknown Level", file=sys.stderr)
         exit(2)
@@ -51,7 +58,7 @@ if mode in "ra":
     else:
         ram_crit = 60
 
-warn_out = input("Warning output [file path, stdout, stderr] (default:None): ").lower()
+warn_out = safe_input("Warning output [file path, stdout, stderr] (default:'/dev/null'): ").lower()
 if os.path.exists(warn_out) and os.path.isfile(warn_out):
     try:
         warn_out = open(warn_out, "w")
@@ -63,9 +70,9 @@ elif warn_out == "stdout":
 elif warn_out == "stderr":
     warn_out = sys.stderr
 else:
-    warn_out = None
+    warn_out = open(os.devnull, "w")
 
-crit_out = input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
+crit_out = safe_input("Critical output [file path, stdout, stderr] (default:stdout): ").lower()
 if os.path.exists(crit_out) and os.path.isfile(crit_out):
     try:
         crit_out = open(crit_out, "w")
@@ -79,7 +86,7 @@ elif crit_out == "stderr":
 else:
     crit_out = sys.stdout
 
-resolution = input("Reading resolution (default:0.5): ")
+resolution = safe_input("Reading resolution (default:0.5): ")
 if resolution:
     try:
         resolution = float(resolution)
@@ -95,7 +102,7 @@ wait = False
 def handle_sigint(sig, stack):
     global wait
     wait = True
-    choice = input("\rAre you sure you want to exit? (y/N)").lower()
+    choice = safe_input("\rAre you sure you want to exit? (y/N)").lower()
     if choice == "y":
         exit(0)
     else:
