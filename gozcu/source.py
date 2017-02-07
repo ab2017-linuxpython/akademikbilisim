@@ -66,20 +66,25 @@ def get_args(argv):
                         help="Activate debug logger",
                         action="store_true", default=False)
 
-    parser.add_argument("-l", "--debug_level",
-                        help="Change debug level",
+    parser.add_argument("-l", "--log_level",
+                        help="Change log level",
                         choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"],
                         default="INFO")
+
+    parser.add_argument("-f", "--log_file",
+                        help="Change log file",
+                        default="/tmp/gozcu.log",
+                        type=argparse.FileType("w"))
 
     return parser.parse_args(argv)
 
 
 def handle_logger(arglar):
-    logger.setLevel(logging._nameToLevel[arglar.debug_level])
+    logger.setLevel(logging._nameToLevel[arglar.log_level])
     formatter = logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s')
     logger.handlers = []
     if arglar.debug:
-        handler = logging.handlers.RotatingFileHandler(filename="output.log",
+        handler = logging.handlers.RotatingFileHandler(filename=arglar.log_file.name,
                                                        maxBytes=1024 * 1024,
                                                        backupCount=3)
         handler.setFormatter(formatter)
