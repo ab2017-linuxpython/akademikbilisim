@@ -1,5 +1,5 @@
 import sys
-import source
+from gozcu import source
 
 
 def main():
