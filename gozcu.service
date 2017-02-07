@@ -1,0 +1,5 @@
+[Unit]
+Description=An example project for Akademik Bilişim 2017 Python for Gnu/Linux Systems course
+
+[Service]
+ExecStart=/usr/bin/gozcu --crit_out /tmp/gozcu.log
